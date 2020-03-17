@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "strapi.fullname" . }}
+  labels:
+    {{- include "strapi.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "strapi.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "strapi.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "strapi.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      volumes:
+        - name: strapi-volume-claim
+          persistentVolumeClaim:
+            claimName: strapi-volume-claim
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}"
+          terminationMessagePath: "/tmp/my-log"
+          volumeMounts:
+            - name: strapi-volume-claim
+              mountPath: /srv/app
+          ports:
+            - containerPort: 1337
+          env:
+            - name: DATABASE_CLIENT
+              value: "{{.Values.db.client}}"
+            - name: DATABASE_HOST
+              value: "{{.Values.db.host}}"
+            - name: DATABASE_NAME
+              value: "{{.Values.db.name}}"
+            - name: DATABASE_PASSWORD
+              value: "{{.Values.db.pass}}"
+            - name: DATABASE_PORT
+              value: "{{.Values.db.port}}"
+            - name: DATABASE_USERNAME
+              value: "{{.Values.db.username}}"
+            - name: PROXY_ENABLED
+              value: "{{.Values.proxy.enabled}}"
+            - name: PROXY_SSL
+              value: "{{.Values.proxy.ssl}}"
+            - name: PROXY_DOMAIN
+              value: "{{.Values.proxy.domain}}"
+            - name: PROXY_PORT
+              value: "{{.Values.proxy.port}}"
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: 1337
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: 1337
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

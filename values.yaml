@@ -1,0 +1,94 @@
+# Default values for strapi-ry.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+#Since this chart should use shared file and data stores you should be able to up the replicas if needed.
+replicaCount: 1
+
+#Had to make a kubernetes happy version of the strapi docker image.  Look here: https://github.com/ryuheiyokokawa/strapi-docker
+#Might have to host your own registry.  I based above on this: https://github.com/strapi/strapi-docker/strapi/
+image:
+  repository: registry.default.com/ry/strapi
+  pullPolicy: IfNotPresent
+
+#Used NFS as a datastore for this project since I already had a server running.
+nfs:
+  server: "nfs.default.com"
+  path: "/srv/strapi-store"
+
+#Strapi wants to know how its going to be exposed to the outside world through a proxy.
+proxy:
+  enabled: true
+  ssl: true
+  domain: "strapi.default.com"
+  port: 443
+
+#RDS or similar can be used here obviously.  Look at strapi's docs for more options: 
+#https://strapi.io/documentation/3.0.0-beta.x/concepts/configurations.html#database
+db:
+  client: mysql
+  host: "localhost"
+  name: strapi
+  pass: "strapi-sql-pass"
+  port: "3306"
+  username: strapi
+
+#Registry credentials might be required if you have a private registry: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: 
+  - name: regcred
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: 
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+#Below is totally up to you. Could be nodeport or whatever you need.
+service:
+  type: LoadBalancer
+  port: 1337
+
+#Make sure to set your host
+ingress:
+  enabled: false
+  hosts:
+    - host: strapi.default.com
+      paths: []
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
